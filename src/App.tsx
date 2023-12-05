@@ -14,7 +14,7 @@ const fetchTranscript = async (videoUrl: string) => {
     throw new Error('Network response was not ok');
   }
   const data = await res.json();
-  console.log(data.transcript);
+  console.log("Frontend received data");
   return data.transcript; 
 };
 
