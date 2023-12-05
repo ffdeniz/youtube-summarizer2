@@ -29,7 +29,7 @@ function App() {
   });
 
 
-  const handleInputChange = (event) => {
+  const handleInputChange = (event: any) => {
     setInputValue(event.target.value);
   };
 
@@ -65,7 +65,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const SaveButton = ({ onClick }) => (
+const SaveButton = ({ onClick }: any) => (
   <button
     className="bg-gray-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     onClick={onClick}
