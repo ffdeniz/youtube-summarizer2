@@ -2,10 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { YoutubeTranscript } from "youtube-transcript";
 import { OpenAI } from "openai";
 
-// Explicitly set Serverless Function on the Node.js runtim
-// export const config = {
-//   runtime: "nodejs",
-// };
+// Explicitly set Serverless Function on the Node.js runtime
+export const config = {
+  maxDuration: 60, 
+};
 
 async function call_openai_chat_api(prompt: string, model = "gpt-3.5-turbo") {
   console.log("Calling OpenAI Chat API...");
