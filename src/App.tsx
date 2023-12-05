@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import TranscriptTool from './components/TranscriptTool';
 
 const fetchTranscript = async (videoUrl: string) => {
-  const res = await fetch(`/api/serverless-example`, {
+  const res = await fetch(`/api/get-youtube-summary`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
