@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './App.css'
 import { useQuery } from 'react-query';
 import TranscriptTool from './components/TranscriptTool';
 
