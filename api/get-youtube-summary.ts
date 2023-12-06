@@ -29,7 +29,7 @@ export default async function (
     const { videoUrl } = request.body;
 
     // Get the video ID from the URL
-    const videoId = String(new URL(videoUrl).searchParams.get("v"));
+    const videoId = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i)[1];
 
     // Get the transcript from the video
     const transcript_list = await YoutubeTranscript.fetchTranscript(videoId);
