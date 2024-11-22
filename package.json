@@ -16,14 +16,15 @@
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
     "react-query": "^3.39.3",
-    "youtube-transcript": "^1.0.6"
+    "vercel": "^39.1.1",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
-    "@vercel/node": "^3.0.11",
+    "@vercel/node": "^3.0.1",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.53.0",
