@@ -19,7 +19,7 @@ return (
              <ReactMarkdown>{transcript}</ReactMarkdown>
           </div>
         ) : (
-          <p>No transcript available. Please enter a YouTube video URL.</p>
+          <p>Please enter a YouTube video URL to get started.</p>
         )}
       </div>
       <h2 className="text-right">DenizAI</h2>

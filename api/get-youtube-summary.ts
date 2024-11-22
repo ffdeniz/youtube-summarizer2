@@ -7,7 +7,7 @@ export const config = {
   maxDuration: 60, 
 };
 
-async function call_openai_chat_api(prompt: string, model = "gpt-3.5-turbo") {
+async function call_openai_chat_api(prompt: string, model = "gpt-4o") {
   console.log("Calling OpenAI Chat API...");
   const openai = new OpenAI();
   const response = await openai.chat.completions.create({
