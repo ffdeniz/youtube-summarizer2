@@ -31,7 +31,7 @@ const fetchTranscript = async (videoUrl: string) => {
 };
 
 function App() {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState('https://www.youtube.com/watch?v=_lzBTBn9kG0');
   const [videoUrl, setVideoUrl] = useState('');
 
   const { data: transcript, isLoading } = useQuery(['transcript', videoUrl], () => fetchTranscript(videoUrl), {

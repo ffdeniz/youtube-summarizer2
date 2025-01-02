@@ -53,8 +53,20 @@ export default async function (
 
       // Get the transcript from the video
       console.log("Backend: Fetching YouTube transcript...");
-      const transcript_list = await YoutubeTranscript.fetchTranscript(videoId);
-      console.log("Backend: Successfully retrieved YouTube transcript");
+      let transcript_list;
+      try {
+        transcript_list = await YoutubeTranscript.fetchTranscript(videoId);
+        console.log("Backend: Successfully retrieved YouTube transcript");
+      } catch (transcriptError) {
+        console.error("Backend: Transcript fetch error:", transcriptError);
+        if (transcriptError.message.includes('Transcript is disabled')) {
+          return response.status(400).json({ 
+            error: "Transcript Unavailable", 
+            message: "This video does not have available transcripts. Please try a different video or ensure closed captions are enabled."
+          });
+        }
+        throw transcriptError; // Re-throw other errors
+      }
 
       const transcript = transcript_list
         .map((item) => item["text"])
