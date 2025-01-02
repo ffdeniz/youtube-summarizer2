@@ -3,19 +3,31 @@ import { useQuery } from 'react-query';
 import TranscriptTool from './components/TranscriptTool';
 
 const fetchTranscript = async (videoUrl: string) => {
-  const res = await fetch(`/api/get-youtube-summary`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ videoUrl }),
-  });
-  if (!res.ok) {
-    throw new Error('Network response was not ok');
+  console.log("Frontend: Initiating transcript fetch for URL:", videoUrl);
+  
+  try {
+    const res = await fetch(`/api/get-youtube-summary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ videoUrl }),
+    });
+
+    console.log("Frontend: API response status:", res.status);
+    
+    if (!res.ok) {
+      console.error("Frontend: API request failed with status:", res.status);
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await res.json();
+    console.log("Frontend: Successfully received transcript data");
+    return data.transcript;
+  } catch (error) {
+    console.error("Frontend: Error fetching transcript:", error);
+    throw error;
   }
-  const data = await res.json();
-  console.log("Frontend received data");
-  return data.transcript; 
 };
 
 function App() {
@@ -34,6 +46,7 @@ function App() {
   };
 
   const handleSaveClick = () => {
+    console.log("Frontend: Save button clicked with URL:", inputValue);
     setVideoUrl(inputValue);
   };
 
