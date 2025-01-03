@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from 'react-query';
-import TranscriptTool from './components/TranscriptTool';
+import ContentDisplay from './components/ContentDisplay';
 
 const getYouTubeTranscript = async (videoUrl: string) => {
   console.log("Frontend: Attempting to get YouTube transcript directly");
@@ -50,41 +50,26 @@ const getSummary = async (transcript: string) => {
   return data.summary;
 };
 
-const processVideo = async (videoUrl: string) => {
-  console.log("Frontend: Starting video processing");
-  try {
-    // First attempt: Try to get YouTube transcript directly
-    const transcript = await getYouTubeTranscript(videoUrl).catch(async (error) => {
-      console.log("Frontend: YouTube transcript failed, falling back to audio method", error);
-      return await getAudioTranscript(videoUrl);
-    });
-
-    if (!transcript) {
-      throw new Error('Failed to get transcript through all available methods');
-    }
-
-    // Get summary of the transcript
-    const summary = await getSummary(transcript);
-    if (!summary) {
-      throw new Error('Failed to generate summary');
-    }
-    
-    return summary;
-
-  } catch (error) {
-    console.error("Frontend: Error in video processing:", error);
-    // Rethrow with more user-friendly message
-    throw new Error(`Failed to process video: ${error instanceof Error ? error.message : String(error)}`);
-  }
-};
-
 function App() {
   const [inputValue, setInputValue] = useState('https://www.youtube.com/watch?v=_lzBTBn9kG0');
   const [videoUrl, setVideoUrl] = useState('');
+  const [activeTab, setActiveTab] = useState('transcript');
 
-  const { data: summary, isLoading } = useQuery(
-    ['summary', videoUrl],
-    () => processVideo(videoUrl),
+  const { data: processedData, isLoading } = useQuery(
+    ['video', videoUrl],
+    async () => {
+      const transcript = await getYouTubeTranscript(videoUrl).catch(async (error) => {
+        console.log("Frontend: YouTube transcript failed, falling back to audio method", error);
+        return await getAudioTranscript(videoUrl);
+      });
+
+      if (!transcript) {
+        throw new Error('Failed to get transcript through all available methods');
+      }
+
+      const summary = await getSummary(transcript);
+      return { transcript, summary };
+    },
     {
       enabled: !!videoUrl,
       refetchOnWindowFocus: false,
@@ -102,42 +87,60 @@ function App() {
   };
 
   return (
-    <div className="h-screen px-4 flex flex-col justify-center items-center">
-      <h1 className="text-2xl font-bold mb-4 text-center">YouTube Summarizer</h1>
-      <div className="w-full max-w-md flex items-center">
-        <input
-          type="text"
-          placeholder="Enter YouTube video URL"
-          className={`flex-1 p-2 mr-2 rounded-md border`}
-          value={inputValue}
-          onChange={handleInputChange}
-        />
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : (
-          <SaveButton onClick={handleSaveClick} />
-        )}
-      </div>
-      <div className="w-full max-w-xl h-5/6 p-6 flex flex-col bg-white rounded-lg shadow-lg">
-        <TranscriptTool transcript={summary} isLoading={isLoading} />
+    <div className="min-h-screen bg-[#F8F8F8] p-4">
+      <div className="max-w-lg mx-auto">
+        {/* <h1 className="text-2xl font-bold text-center mb-8">YouTube Video Summarizer</h1> */}
+        
+        <div className="space-y-3 mb-6">
+          <input
+            type="text"
+            placeholder="Enter YouTube URL"
+            className="w-full p-3 rounded-md border border-gray-300"
+            value={inputValue}
+            onChange={handleInputChange}
+          />
+          <button
+            className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-md"
+            onClick={handleSaveClick}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : 'Summarize'}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="flex border-b">
+            <button
+              className={`flex-1 px-4 py-3 text-center ${
+                activeTab === 'transcript' 
+                  ? 'bg-white font-medium' 
+                  : 'bg-gray-50 text-gray-500'
+              }`}
+              onClick={() => setActiveTab('transcript')}
+            >
+              Transcription
+            </button>
+            <button
+              className={`flex-1 px-4 py-3 text-center ${
+                activeTab === 'summary' 
+                  ? 'bg-white font-medium' 
+                  : 'bg-gray-50 text-gray-500'
+              }`}
+              onClick={() => setActiveTab('summary')}
+            >
+              Summary
+            </button>
+          </div>
+
+          <ContentDisplay
+            content={activeTab === 'transcript' ? processedData?.transcript || '' : processedData?.summary || ''}
+            isLoading={isLoading}
+            title={activeTab === 'transcript' ? 'Transcription' : 'Summary'}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
 export default App;
-
-const LoadingSpinner = () => (
-  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-gray-500 to-white-500 animate-spin">
-    <div className="h-4 w-4 rounded-full bg-gray-200"></div>
-  </div>
-);
-
-const SaveButton = ({ onClick }: { onClick: () => void }) => (
-  <button
-    className="bg-gray-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    onClick={onClick}
-  >
-    Save
-  </button>
-);

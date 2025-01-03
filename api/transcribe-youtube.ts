@@ -5,10 +5,6 @@ export const config = {
   maxDuration: 60,
 };
 
-interface TranscriptError {
-  message: string;
-}
-
 export default async function (
   request: VercelRequest,
   response: VercelResponse
