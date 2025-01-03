@@ -94,14 +94,15 @@ def transcribe_audio(audio_path):
         print(f"Error during transcription: {str(e)}")
         return {"success": False, "error": str(e)}
 
-@app.route('/api/downloadaudio', methods=['POST'])
-def downloadaudio():
+
+@app.route('/api/audiotranscribe', methods=['POST'])  # Updated endpoint name
+def audiotranscribe():  # Updated function name
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
     
     data = request.get_json()
     video_url = data.get('videoUrl')
-    should_transcribe = data.get('transcribe', False)  # Optional parameter
+    should_transcribe = data.get('transcribe', False)
     
     if not video_url:
         return jsonify({"error": "No video URL provided"}), 400
@@ -134,4 +135,4 @@ def downloadaudio():
     return jsonify(download_result)
 
 if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+    app.run(port=5555, debug=True) 

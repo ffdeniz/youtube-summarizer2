@@ -2,77 +2,97 @@ import { useState } from 'react'
 import { useQuery } from 'react-query';
 import TranscriptTool from './components/TranscriptTool';
 
-const fetchTranscript = async (videoUrl: string) => {
-  console.log("Frontend: Initiating transcript fetch for URL:", videoUrl);
-  
-  try {
-    const res = await fetch(`/api/get-youtube-summary`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ videoUrl }),
-    });
+const getYouTubeTranscript = async (videoUrl: string) => {
+  console.log("Frontend: Attempting to get YouTube transcript directly");
+  const res = await fetch(`/api/transcribe-youtube`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ videoUrl }),
+  });
 
-    console.log("Frontend: API response status:", res.status);
-    
-    if (!res.ok) {
-      console.error("Frontend: API request failed with status:", res.status);
-      throw new Error('Network response was not ok');
-    }
-
-    const data = await res.json();
-    console.log("Frontend: Successfully received transcript data");
-    return data.transcript;
-  } catch (error) {
-    console.error("Frontend: Error fetching transcript:", error);
-    throw error;
+  if (!res.ok) {
+    throw new Error('YouTube transcript unavailable');
   }
+
+  const data = await res.json();
+  return data.transcript;
 };
 
-const downloadAudio = async (videoUrl: string, transcribe: boolean = false) => {
-  console.log("Frontend: Initiating audio download for URL:", videoUrl);
-  
+const getAudioTranscript = async (videoUrl: string) => {
+  console.log("Frontend: Falling back to audio download and transcription");
+  const res = await fetch(`/api/audiotranscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ videoUrl, transcribe: true }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Audio transcription failed');
+  }
+
+  const data = await res.json();
+  return data.transcript;
+};
+
+const getSummary = async (transcript: string) => {
+  console.log("Frontend: Getting summary of transcript");
+  const res = await fetch(`/api/summarize-transcript`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Summary generation failed');
+  }
+
+  const data = await res.json();
+  return data.summary;
+};
+
+const processVideo = async (videoUrl: string) => {
+  console.log("Frontend: Starting video processing");
   try {
-    const res = await fetch(`/api/downloadaudio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ videoUrl, transcribe }),
+    // First attempt: Try to get YouTube transcript directly
+    const transcript = await getYouTubeTranscript(videoUrl).catch(async (error) => {
+      console.log("Frontend: YouTube transcript failed, falling back to audio method", error);
+      return await getAudioTranscript(videoUrl);
     });
 
-    console.log("Frontend: Audio download API response status:", res.status);
-    
-    if (!res.ok) {
-      console.error("Frontend: Audio download API request failed with status:", res.status);
-      throw new Error('Network response was not ok');
+    if (!transcript) {
+      throw new Error('Failed to get transcript through all available methods');
     }
 
-    const data = await res.json();
-    console.log("Frontend: Successfully received audio download response:", data);
-    return data;
+    // Get summary of the transcript
+    const summary = await getSummary(transcript);
+    if (!summary) {
+      throw new Error('Failed to generate summary');
+    }
+    
+    return summary;
+
   } catch (error) {
-    console.error("Frontend: Error downloading audio:", error);
-    throw error;
+    console.error("Frontend: Error in video processing:", error);
+    // Rethrow with more user-friendly message
+    throw new Error(`Failed to process video: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 
 function App() {
   const [inputValue, setInputValue] = useState('https://www.youtube.com/watch?v=_lzBTBn9kG0');
   const [videoUrl, setVideoUrl] = useState('');
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
 
+  const { data: summary, isLoading } = useQuery(
+    ['summary', videoUrl],
+    () => processVideo(videoUrl),
+    {
+      enabled: !!videoUrl,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    }
+  );
 
-  const { data: transcript, isLoading } = useQuery(['transcript', videoUrl], () => fetchTranscript(videoUrl), {
-    enabled: !!videoUrl,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
-
-  const handleInputChange = (event: any) => {
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
@@ -81,32 +101,8 @@ function App() {
     setVideoUrl(inputValue);
   };
 
-  const handleDownloadClick = async (withTranscription: boolean = false) => {
-    console.log("Frontend: Download button clicked with URL:", inputValue);
-    setIsDownloading(true);
-    if (withTranscription) setIsTranscribing(true);
-    
-    try {
-      const result = await downloadAudio(inputValue, withTranscription);
-      if (result.success) {
-        if (withTranscription) {
-          alert(`Audio downloaded and transcribed successfully!\nAudio: ${result.audio_path}\nTranscript: ${result.transcript_path}`);
-        } else {
-          alert(`Audio downloaded successfully! Path: ${result.path}`);
-        }
-      } else {
-        alert(`Operation failed: ${result.error}`);
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsDownloading(false);
-      if (withTranscription) setIsTranscribing(false);
-    }
-  };
-
   return (
-    <div className="h-screen px-4 flex flex-col justify-center items-center ">
+    <div className="h-screen px-4 flex flex-col justify-center items-center">
       <h1 className="text-2xl font-bold mb-4 text-center">YouTube Summarizer</h1>
       <div className="w-full max-w-md flex items-center">
         <input
@@ -116,20 +112,16 @@ function App() {
           value={inputValue}
           onChange={handleInputChange}
         />
-        {isLoading ? <LoadingSpinner /> : <SaveButton onClick={handleSaveClick} />}
-        <DownloadButton 
-          onClick={() => handleDownloadClick(false)} 
-          isDownloading={isDownloading}
-        />
-        <TranscribeButton 
-          onClick={() => handleDownloadClick(true)}
-          isTranscribing={isTranscribing || isDownloading}
-        />
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <SaveButton onClick={handleSaveClick} />
+        )}
       </div>
       <div className="w-full max-w-xl h-5/6 p-6 flex flex-col bg-white rounded-lg shadow-lg">
-        <TranscriptTool transcript={transcript} isLoading={isLoading} />
+        <TranscriptTool transcript={summary} isLoading={isLoading} />
       </div>
-    </div >
+    </div>
   );
 }
 
@@ -141,31 +133,11 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const SaveButton = ({ onClick }: any) => (
+const SaveButton = ({ onClick }: { onClick: () => void }) => (
   <button
     className="bg-gray-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     onClick={onClick}
   >
     Save
-  </button>
-);
-
-const DownloadButton = ({ onClick, isDownloading }: { onClick: () => void, isDownloading: boolean }) => (
-  <button
-    className={`ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
-    onClick={onClick}
-    disabled={isDownloading}
-  >
-    {isDownloading ? 'Downloading...' : 'Download Audio'}
-  </button>
-);
-
-const TranscribeButton = ({ onClick, isTranscribing }: { onClick: () => void, isTranscribing: boolean }) => (
-  <button
-    className={`ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isTranscribing ? 'opacity-50 cursor-not-allowed' : ''}`}
-    onClick={onClick}
-    disabled={isTranscribing}
-  >
-    {isTranscribing ? 'Processing...' : 'Download & Transcribe'}
   </button>
 );
