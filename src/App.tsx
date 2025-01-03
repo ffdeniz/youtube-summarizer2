@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from 'react-query';
 import TranscriptTool from './components/TranscriptTool';
 
@@ -33,6 +33,19 @@ const fetchTranscript = async (videoUrl: string) => {
 function App() {
   const [inputValue, setInputValue] = useState('https://www.youtube.com/watch?v=_lzBTBn9kG0');
   const [videoUrl, setVideoUrl] = useState('');
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/backend')
+      .then(response => response.json())
+      .then(data => setData(data))
+  }, [])
+
+  useEffect(() => {
+    if (data) {
+      console.log('Backend test data:', data);
+    }
+  }, [data]);
 
   const { data: transcript, isLoading } = useQuery(['transcript', videoUrl], () => fetchTranscript(videoUrl), {
     enabled: !!videoUrl,
