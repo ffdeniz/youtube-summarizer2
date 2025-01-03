@@ -135,7 +135,6 @@ function App() {
           <ContentDisplay
             content={activeTab === 'transcript' ? processedData?.transcript || '' : processedData?.summary || ''}
             isLoading={isLoading}
-            title={activeTab === 'transcript' ? 'Transcription' : 'Summary'}
           />
         </div>
       </div>

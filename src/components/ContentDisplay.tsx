@@ -5,10 +5,9 @@ import Skeleton from './Skeleton';
 interface ContentDisplayProps {
   content: string;
   isLoading: boolean;
-  title: string;
 }
 
-export default function ContentDisplay({ content, isLoading, title }: ContentDisplayProps) {
+export default function ContentDisplay({ content, isLoading }: ContentDisplayProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
@@ -40,7 +39,7 @@ export default function ContentDisplay({ content, isLoading, title }: ContentDis
             <Skeleton />
           </div>
         ) : content ? (
-          <div className="w-full p-4 rounded-md"
+          <div className="w-full p-4 before:rounded-md"
             style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap'}}>
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
