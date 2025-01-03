@@ -1,0 +1,1 @@
+# If the folder structure is set up as a package, you can directly import the function using the package notation. Ensure the folder you're importing from contains an __init__.py file (it can be empty) to be recognized as a package.
